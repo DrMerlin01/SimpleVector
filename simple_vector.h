@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <utility>
 #include <iterator>
+#include <algorithm>
 #include "array_ptr.h"
 
 class ReserveProxyObj {
@@ -13,12 +14,7 @@ public:
 		: capacity_(new_capacity)
 	{
 	}
-	
-	size_t GetCapacity() const {
-		return capacity_;
-	}
-	
-private:
+
 	size_t capacity_;
 };
 
@@ -32,19 +28,16 @@ public:
 	using Iterator = Type*;
 	using ConstIterator = const Type*;
 	
-	SimpleVector() noexcept = default;
+	explicit SimpleVector() noexcept = default;
 	
 	// Создаёт вектор из size элементов, инициализированных значением по умолчанию
 	explicit SimpleVector(size_t size) 
-		: array_(size)
-		, size_(size)
-		, capacity_(size)
+		: SimpleVector(size, Type())
 	{
-		std::fill(begin(), end(), 0);
 	}
 	
 	// Создаёт вектор из size элементов, инициализированных значением value
-	SimpleVector(size_t size, const Type& value) 
+	explicit SimpleVector(size_t size, const Type& value) 
 		: array_(size)
 		, size_(size)
 		, capacity_(size)
@@ -61,16 +54,18 @@ public:
 		std::copy(init.begin(), init.end(), begin());
 	}
 	
-	SimpleVector(const ReserveProxyObj other) {
-		Reserve(other.GetCapacity());
+	SimpleVector(const ReserveProxyObj other) 
+		: array_(other.capacity_)
+		, capacity_(other.capacity_)
+	{
 	}
 	
-	SimpleVector(const SimpleVector& other) {
-		assert(size_ == 0 && capacity_ == 0);
-		
-		SimpleVector<Type> temp(other.GetSize());
-		std::move(other.begin(), other.end(), temp.begin());
-		swap(temp);
+	SimpleVector(const SimpleVector& other)
+		: array_(other.GetSize())
+		, size_(other.GetSize())
+		, capacity_(other.GetSize())
+	{
+		std::copy(other.begin(), other.end(), begin());
 	}
 	
 	SimpleVector& operator=(const SimpleVector& rhs) {
@@ -83,21 +78,24 @@ public:
 	}
 	
 	// Создаёт вектор из size элементов, инициализированных значением value
-	SimpleVector(size_t size, Type&& value) 
+	explicit SimpleVector(size_t size, Type&& value) 
 		: array_(size)
 		, size_(size)
 		, capacity_(size)
 	{
-		std::fill(begin(), end(), std::move(value));
+		int index = 0;
+		for (auto it = std::make_move_iterator(begin()); it < std::make_move_iterator(end()); ++it) {
+			array_[index++] = std::move(value);
+		}
 	}
 	
-	SimpleVector(SimpleVector&& other) {
-		assert(size_ == 0 && capacity_ == 0);
-		
-		SimpleVector<Type> temp(other.GetSize());
-		std::move(other.begin(), other.end(), temp.begin());
+	SimpleVector(SimpleVector&& other)
+		: array_(other.GetSize())
+		, size_(other.GetSize())
+		, capacity_(other.GetSize())
+	{
+		std::move(other.begin(), other.end(), begin());
 		other.Clear();
-		swap(temp);
 	}
 	
 	SimpleVector& operator=(SimpleVector&& rhs) {
@@ -111,9 +109,7 @@ public:
 	
 	void Reserve(size_t new_capacity) {
 		if(new_capacity > GetCapacity()) {
-			size_t old_size_ = GetSize();
-			Resize(new_capacity);
-			size_ = old_size_;
+			IncreaseCapacity(new_capacity);
 		}
 	}
 	
@@ -123,7 +119,7 @@ public:
 		if(new_size <= size_) {
 			size_ = new_size;
 		} else if(new_size <= capacity_) {
-			std::fill(end(), end() + new_size, 0);
+			std::fill(end(), end() + new_size, Type());
 			size_ = new_size;
 		} else {
 			SimpleVector<Type> other(new_size);
@@ -136,27 +132,21 @@ public:
 	// При нехватке места увеличивает вдвое вместимость вектора
 	void PushBack(const Type& item) {
 		if(IsEmpty() && GetCapacity() == 0) {
-			Resize(1);
-			size_ = 0;
+			IncreaseCapacity(1);
 		} else if(GetSize() >= GetCapacity()) {
-			size_t old_size_ = GetSize();
-			Resize(GetCapacity() * 2);
-			size_ = old_size_;
+			IncreaseCapacity(GetCapacity() * 2);
 		}
 		
-		array_[size_++] = std::move(item);
+		array_[size_++] = item;
 	}
 	
 	// Добавляет элемент в конец вектора
 	// При нехватке места увеличивает вдвое вместимость вектора
 	void PushBack(Type&& item) {
 		if(IsEmpty() && GetCapacity() == 0) {
-			Resize(1);
-			size_ = 0;
+			IncreaseCapacity(1);
 		} else if(GetSize() >= GetCapacity()) {
-			size_t old_size_ = GetSize();
-			Resize(GetCapacity() * 2);
-			size_ = old_size_;
+			IncreaseCapacity(GetCapacity() * 2);
 		}
 		
 		array_[size_++] = std::move(item);
@@ -167,19 +157,16 @@ public:
 	// Если перед вставкой значения вектор был заполнен полностью,
 	// вместимость вектора должна увеличиться вдвое, а для вектора вместимостью 0 стать равной 1
 	Iterator Insert(ConstIterator pos, const Type& value) {
-		int distance_ = std::distance(cbegin(), pos);
+		const uint distance_ = std::distance(cbegin(), pos);
 		if(IsEmpty() && GetCapacity() == 0) {
-			Resize(1);
-			size_ = 0;
+			IncreaseCapacity(1);
 		} else if(GetSize() >= GetCapacity()) {
-			size_t old_size_ = GetSize();
-			Resize(GetCapacity() * 2);
-			size_ = old_size_;
-			std::move_backward(begin() + distance_, end(), end() + 1);
+			IncreaseCapacity(GetCapacity() * 2);
+			std::copy_backward(begin() + distance_, end(), end() + 1);
 		} else {
-			std::move_backward(begin() + distance_, cend(), end() + 1);
+			std::copy_backward(begin() + distance_, end(), end() + 1);
 		}
-		*(begin() + distance_) = std::move(value);
+		*(begin() + distance_) = value;
 		++size_;
 		
 		return (begin() + distance_);
@@ -190,14 +177,11 @@ public:
 	// Если перед вставкой значения вектор был заполнен полностью,
 	// вместимость вектора должна увеличиться вдвое, а для вектора вместимостью 0 стать равной 1
 	Iterator Insert(ConstIterator pos, Type&& value) {
-		int distance_ = std::distance(cbegin(), pos);
+		const uint distance_ = std::distance(cbegin(), pos);
 		if(IsEmpty() && GetCapacity() == 0) {
-			Resize(1);
-			size_ = 0;
+			IncreaseCapacity(1);
 		} else if(GetSize() >= GetCapacity()) {
-			size_t old_size_ = GetSize();
-			Resize(GetCapacity() * 2);
-			size_ = old_size_;
+			IncreaseCapacity(GetCapacity() * 2);
 			std::move_backward(begin() + distance_, end(), end() + 1);
 		} else {
 			std::move_backward(begin() + distance_, end(), end() + 1);
@@ -217,7 +201,7 @@ public:
 	
 	// Удаляет элемент вектора в указанной позиции
 	Iterator Erase(ConstIterator pos) {
-		int distance_ = std::distance(cbegin(), pos);
+		const uint distance_ = std::distance(cbegin(), pos);
 		std::move(begin() + distance_ + 1, end(), begin() + distance_);
 		--size_;
 		
@@ -248,11 +232,15 @@ public:
 	
 	// Возвращает ссылку на элемент с индексом index
 	Type& operator[](size_t index) noexcept {
+        assert(index < size_);
+        
 		return array_[index];
 	}
 	
 	// Возвращает константную ссылку на элемент с индексом index
 	const Type& operator[](size_t index) const noexcept {
+        assert(index < size_);
+        
 		return array_[index];
 	}
 	
@@ -317,10 +305,17 @@ public:
 		return array_.Get() + GetSize();
 	}
 	
-	private:
+private:
 	ArrayPtr<Type> array_;
 	size_t size_ = 0;
 	size_t capacity_ = 0;
+	
+	void IncreaseCapacity(const size_t new_capacity) {
+		SimpleVector<Type> temp(new_capacity);
+		std::move(begin(), end(), temp.begin());
+		array_.swap(temp.array_);
+		capacity_ = temp.capacity_;
+	}
 };
 
 template <typename Type>

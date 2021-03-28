@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cassert>
 #include <cstdlib>
 #include <utility>
@@ -13,9 +15,8 @@ public:
 	explicit ArrayPtr(size_t size) {
 		if(size == 0) {
 			raw_ptr_ = nullptr;
-			} else {
-			Type* raw_ptr = new Type[size];
-			raw_ptr_ = std::exchange(raw_ptr, nullptr);
+		} else {
+			raw_ptr_ = new Type[size];
 		}
 	}
 	
@@ -35,6 +36,19 @@ public:
 	// Запрещаем присваивание
 	ArrayPtr& operator=(const ArrayPtr&) = delete;
 	
+	ArrayPtr(ArrayPtr&& other) noexcept {
+		raw_ptr_ = std::exchange(other.raw_ptr_, nullptr);
+	}
+
+	ArrayPtr& operator=(ArrayPtr&& rhs) {
+		if(this != &rhs) {
+			ArrayPtr<Type> temp(std::move(rhs));
+			swap(temp);
+		}
+		
+		return *this;
+	}
+	
 	// Прекращает владением массивом в памяти, возвращает значение адреса массива
 	// После вызова метода указатель на массив должен обнулиться
 	[[nodiscard]] Type* Release() noexcept {
@@ -43,12 +57,12 @@ public:
 	
 	// Возвращает ссылку на элемент массива с индексом index
 	Type& operator[](size_t index) noexcept {
-		return *(raw_ptr_ + index);
+		return raw_ptr_[index];
 	}
 	
 	// Возвращает константную ссылку на элемент массива с индексом index
 	const Type& operator[](size_t index) const noexcept {
-		return *(raw_ptr_ + index);
+		return raw_ptr_[index];
 	}
 	
 	// Возвращает true, если указатель ненулевой, и false в противном случае
@@ -63,7 +77,7 @@ public:
 	
 	// Обменивается значениям указателя на массив с объектом other
 	void swap(ArrayPtr& other) noexcept {
-		other.raw_ptr_ = std::exchange(raw_ptr_, other.raw_ptr_);
+		std::swap(raw_ptr_, other.raw_ptr_);
 	}
 	
 private:
