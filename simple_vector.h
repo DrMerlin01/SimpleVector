@@ -7,7 +7,7 @@
 #include <iterator>
 #include <algorithm>
 #include "array_ptr.h"
-
+#include <iostream>
 struct ReserveProxyObj {
 	size_t capacity;
 };
@@ -87,7 +87,7 @@ public:
 		, capacity_(std::move(other.capacity_))
 	{
 		other.Clear();
-		other.capacity_ = 0;
+        other.capacity_ = 0;
 	}
 
 	SimpleVector& operator=(SimpleVector&& rhs) {
@@ -140,7 +140,7 @@ public:
 		} else if(GetSize() >= GetCapacity()) {
 			IncreaseCapacity(GetCapacity() * 2);
 		}
-		
+        
 		array_[size_++] = std::move(item);
 	}
 
@@ -154,9 +154,9 @@ public:
 			IncreaseCapacity(1);
 		} else if(GetSize() >= GetCapacity()) {
 			IncreaseCapacity(GetCapacity() * 2);
-			std::copy(begin() + distance_, end(), begin() + distance_ + 1);
+			std::copy_backward(begin() + distance_, end(), end() + 1);
 		} else {
-			std::copy(begin() + distance_, end(), begin() + distance_ + 1);
+			std::copy_backward(begin() + distance_, end(), end() + 1);
 		}
 		*(begin() + distance_) = value;
 		++size_;
@@ -174,9 +174,9 @@ public:
 			IncreaseCapacity(1);
 		} else if(GetSize() >= GetCapacity()) {
 			IncreaseCapacity(GetCapacity() * 2);
-			std::move(begin() + distance_, end(), begin() + distance_ + 1);
+			std::move_backward(begin() + distance_, end(), end() + 1);
 		} else {
-			std::move(begin() + distance_, end(), begin() + distance_ + 1);
+			std::move_backward(begin() + distance_, end(), end() + 1);
 		}
 		*(begin() + distance_) = std::move(value);
 		++size_;
