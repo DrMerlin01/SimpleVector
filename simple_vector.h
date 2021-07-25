@@ -7,7 +7,7 @@
 #include <iterator>
 #include <algorithm>
 #include "array_ptr.h"
-#include <iostream>
+
 struct ReserveProxyObj {
 	size_t capacity;
 };
@@ -26,16 +26,14 @@ public:
 
 	// Создаёт вектор из size элементов, инициализированных значением по умолчанию
 	explicit SimpleVector(size_t size) 
-		: SimpleVector(size, Type())
-	{
+		: SimpleVector(size, Type()) {
 	}
 
 	// Создаёт вектор из size элементов, инициализированных значением value
 	SimpleVector(size_t size, const Type& value) 
 		: array_(size)
 		, size_(size)
-		, capacity_(size)
-	{
+		, capacity_(size) {
 		std::fill(begin(), end(), value);
 	}
 
@@ -43,23 +41,20 @@ public:
 	SimpleVector(std::initializer_list<Type> init) 
 		: array_(init.size())
 		, size_(init.size())
-		, capacity_(init.size())
-	{
+		, capacity_(init.size()) {
 		std::copy(init.begin(), init.end(), begin());
 	}
 
 	SimpleVector(const ReserveProxyObj other) 
 		: array_(other.capacity)
 		, size_(0)
-		, capacity_(other.capacity)
-	{
+		, capacity_(other.capacity) {
 	}
 
 	SimpleVector(const SimpleVector& other)
 		: array_(other.GetSize())
 		, size_(other.GetSize())
-		, capacity_(other.GetSize())
-	{
+		, capacity_(other.GetSize()) {
 		std::copy(other.begin(), other.end(), begin());
 	}
 
@@ -76,18 +71,16 @@ public:
 	SimpleVector(size_t size, Type&& value) 
 		: array_(size)
 		, size_(size)
-		, capacity_(size)
-	{
+		, capacity_(size) {
 		std::fill(begin(), end(), value);
 	}
 
 	SimpleVector(SimpleVector&& other)
 		: array_(std::move(other.array_))
 		, size_(std::move(other.size_))
-		, capacity_(std::move(other.capacity_))
-	{
+		, capacity_(std::move(other.capacity_)) {
 		other.Clear();
-        other.capacity_ = 0;
+		other.capacity_ = 0;
 	}
 
 	SimpleVector& operator=(SimpleVector&& rhs) {
@@ -123,7 +116,7 @@ public:
 	// Добавляет элемент в конец вектора
 	// При нехватке места увеличивает вдвое вместимость вектора
 	void PushBack(const Type& item) {
-		if(IsEmpty() && GetCapacity() == 0) {
+		if(IsEmpty() && GetCapacity() == 0U) {
 			IncreaseCapacity(1);
 		} else if(GetSize() >= GetCapacity()) {
 			IncreaseCapacity(GetCapacity() * 2);
@@ -135,12 +128,12 @@ public:
 	// Добавляет элемент в конец вектора
 	// При нехватке места увеличивает вдвое вместимость вектора
 	void PushBack(Type&& item) {
-		if(IsEmpty() && GetCapacity() == 0) {
+		if(IsEmpty() && GetCapacity() == 0U) {
 			IncreaseCapacity(1);
 		} else if(GetSize() >= GetCapacity()) {
 			IncreaseCapacity(GetCapacity() * 2);
 		}
-        
+
 		array_[size_++] = std::move(item);
 	}
 
@@ -150,7 +143,7 @@ public:
 	// вместимость вектора должна увеличиться вдвое, а для вектора вместимостью 0 стать равной 1
 	Iterator Insert(ConstIterator pos, const Type& value) {
 		const size_t distance_ = std::distance(cbegin(), pos);
-		if(IsEmpty() && GetCapacity() == 0) {
+		if(IsEmpty() && GetCapacity() == 0U) {
 			IncreaseCapacity(1);
 		} else if(GetSize() >= GetCapacity()) {
 			IncreaseCapacity(GetCapacity() * 2);
@@ -219,7 +212,7 @@ public:
 
 	// Сообщает, пустой ли массив
 	bool IsEmpty() const noexcept {
-		return GetSize() == 0;
+		return GetSize() == 0U;
 	}
 
 	// Возвращает ссылку на элемент с индексом index

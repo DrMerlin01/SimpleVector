@@ -9,13 +9,11 @@ using namespace std;
 class X {
 public:
 	X()
-		: X(5) 
-	{
+		: X(5) {
 	}
 
 	X(size_t num)
-		: x_(num) 
-	{
+		: x_(num) {
 	}
 
 	X(const X& other) = delete;
@@ -28,6 +26,7 @@ public:
 
 	X& operator=(X&& other) {
 		x_ = exchange(other.x_, 0);
+
 		return *this;
 	}
 
@@ -68,10 +67,10 @@ void TestNamedMoveConstructor() {
 	cout << "Test with named object, move constructor" << endl;
 	SimpleVector<int> vector_to_move(GenerateVector(size));
 	assert(vector_to_move.GetSize() == size);
-	
+
 	SimpleVector<int> moved_vector(move(vector_to_move));
 	assert(moved_vector.GetSize() == size);
-	assert(vector_to_move.GetSize() == 0);
+	assert(vector_to_move.GetSize() == 0U);
 	cout << "Done!" << endl << endl;
 }
 
@@ -80,10 +79,10 @@ void TestNamedMoveOperator() {
 	cout << "Test with named object, operator=" << endl;
 	SimpleVector<int> vector_to_move(GenerateVector(size));
 	assert(vector_to_move.GetSize() == size);
-	
+
 	SimpleVector<int> moved_vector = move(vector_to_move);
 	assert(moved_vector.GetSize() == size);
-	assert(vector_to_move.GetSize() == 0);
+	assert(vector_to_move.GetSize() == 0U);
 	cout << "Done!" << endl << endl;
 }
 
@@ -94,11 +93,11 @@ void TestNoncopiableMoveConstructor() {
 	for (size_t i = 0; i < size; ++i) {
 		vector_to_move.PushBack(X(i));
 	}
-	
+
 	SimpleVector<X> moved_vector = move(vector_to_move);
 	assert(moved_vector.GetSize() == size);
-	assert(vector_to_move.GetSize() == 0);
-	
+	assert(vector_to_move.GetSize() == 0U);
+
 	for (size_t i = 0; i < size; ++i) {
 		assert(moved_vector[i].GetX() == i);
 	}
@@ -112,9 +111,9 @@ void TestNoncopiablePushBack() {
 	for (size_t i = 0; i < size; ++i) {
 		v.PushBack(X(i));
 	}
-	
+
 	assert(v.GetSize() == size);
-	
+
 	for (size_t i = 0; i < size; ++i) {
 		assert(v[i].GetX() == i);
 	}
@@ -128,7 +127,7 @@ void TestNoncopiableInsert() {
 	for (size_t i = 0; i < size; ++i) {
 		v.PushBack(X(i));
 	}
-	
+
 	// в начало
 	v.Insert(v.begin(), X(size + 1));
 	assert(v.GetSize() == size + 1);
@@ -151,7 +150,7 @@ void TestNoncopiableErase() {
 	for (size_t i = 0; i < size; ++i) {
 		v.PushBack(X(i));
 	}
-	
+
 	auto it = v.Erase(v.begin());
 	assert(it->GetX() == 1);
 	cout << "Done!" << endl << endl;
@@ -166,5 +165,6 @@ int main() {
 	TestNoncopiablePushBack();
 	TestNoncopiableInsert();
 	TestNoncopiableErase();
+
 	return 0;
 }
