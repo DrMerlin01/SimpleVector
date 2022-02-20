@@ -8,3 +8,5 @@ GCC is used for the assembly:
   1. C++17
   2. GCC version 8.1.0
   3. RAII
+# Future Plans
+  1. Add a script to build the project
