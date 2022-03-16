@@ -1,4 +1,4 @@
-#include "simple_vector.h"
+#include "../inc/simple_vector.h"
 
 #include <cassert>
 #include <iostream>
