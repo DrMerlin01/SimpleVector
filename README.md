@@ -13,4 +13,4 @@ Container, a simplified analogue of std::vector. A pointer wrapper has been writ
   3. Cmake 3.21.2 (minimal 3.10)
   4. RAII
 # Future Plans
-  
+  1. Add tests for all functionality
